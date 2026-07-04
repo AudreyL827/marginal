@@ -6,7 +6,7 @@
   <title>Marginal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Inter:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Space+Grotesk:wght@500;600&family=Inter:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="sidepanel.css">
 </head>
 <body>
@@ -74,26 +74,23 @@
 
     <!-- Export view -->
     <section id="export-view" role="tabpanel" hidden>
-      <div class="export-content">
-        <p class="export-section-label">File format</p>
-        <div class="export-options">
-          <label class="radio-option"><input type="radio" name="export-format" value="text" checked> Plain text</label>
-          <label class="radio-option"><input type="radio" name="export-format" value="md"> Markdown</label>
-          <label class="radio-option"><input type="radio" name="export-format" value="json"> JSON</label>
-        </div>
-
+      <div class="export-toolbar">
         <p class="export-section-label">Citation style</p>
         <div class="tab-group export-cite-tabs">
           <button class="tab active" data-fmt="apa">APA</button>
           <button class="tab" data-fmt="mla">MLA</button>
           <button class="tab" data-fmt="chicago">Chicago</button>
         </div>
-
-        <textarea class="export-preview" id="export-preview" readonly spellcheck="false"></textarea>
-
-        <div class="export-footer">
-          <button class="btn-primary" id="export-copy">Copy to clipboard</button>
+        <div class="export-select-bar">
+          <label class="export-select-all-label">
+            <input type="checkbox" id="export-select-all"> Select all
+          </label>
+          <span id="export-selected-count" class="export-selected-count">0 selected</span>
         </div>
+      </div>
+      <div class="export-quote-list" id="export-quote-list"></div>
+      <div class="export-footer">
+        <button class="btn-primary" id="export-copy" disabled>Copy citations</button>
       </div>
     </section>
 
