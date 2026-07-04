@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marginal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Inter:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <div class="app">
+
+    <!-- Sticky zone: header + tab bar move together -->
+    <div class="top-bar">
+      <header class="header">
+        <div class="header__chromatic"></div>
+        <div class="header__inner">
+          <div class="header__brand">
+            <svg class="header__logo" viewBox="0 0 24 24" fill="none">
+              <path d="M6 3h12a2 2 0 0 1 2 2v14l-7-3-7 3V5a2 2 0 0 1 2-2z" fill="currentColor"/>
+            </svg>
+            <span class="header__wordmark">Marginal</span>
+            <button class="theme-btn" id="theme-btn" title="Switch to dark mode">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+            </button>
+            <span class="header__count" id="quote-count">0</span>
+          </div>
+        </div>
+      </header>
+
+      <nav class="view-tabs" role="tablist">
+        <button class="view-tab active" data-view="quotes" role="tab" aria-controls="quotes-view">Quotes</button>
+        <button class="view-tab" data-view="export" role="tab" aria-controls="export-view">Export</button>
+      </nav>
+    </div>
+
+    <!-- Quotes view -->
+    <section id="quotes-view" role="tabpanel">
+      <div class="search-bar">
+        <svg class="search-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input class="search-bar__input" type="search" id="search-input" placeholder="Search quotes, sources, notes…" autocomplete="off">
+      </div>
+
+      <div class="filters" id="filters">
+        <button class="filter-chip active" data-filter="all">All</button>
+        <button class="filter-chip" data-filter="today">Today</button>
+        <button class="filter-chip" data-filter="week">This week</button>
+        <div class="filter-sep"></div>
+        <div id="album-chips"></div>
+        <button class="icon-btn icon-btn--sm" id="new-album-btn" title="New album">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+        </button>
+      </div>
+
+      <main class="quotes-list" id="quotes-list"></main>
+
+      <div class="empty-state" id="empty-state" hidden>
+        <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M6 3h12a2 2 0 0 1 2 2v14l-7-3-7 3V5a2 2 0 0 1 2-2z"/>
+        </svg>
+        <p class="empty-state__title">No quotes saved yet</p>
+        <p class="empty-state__sub">Highlight text and press <kbd>⌘⇧S</kbd></p>
+      </div>
+    </section>
+
+    <!-- Export view -->
+    <section id="export-view" role="tabpanel" hidden>
+      <div class="export-content">
+        <p class="export-section-label">File format</p>
+        <div class="export-options">
+          <label class="radio-option"><input type="radio" name="export-format" value="text" checked> Plain text</label>
+          <label class="radio-option"><input type="radio" name="export-format" value="md"> Markdown</label>
+          <label class="radio-option"><input type="radio" name="export-format" value="json"> JSON</label>
+        </div>
+
+        <p class="export-section-label">Citation style</p>
+        <div class="tab-group export-cite-tabs">
+          <button class="tab active" data-fmt="apa">APA</button>
+          <button class="tab" data-fmt="mla">MLA</button>
+          <button class="tab" data-fmt="chicago">Chicago</button>
+        </div>
+
+        <textarea class="export-preview" id="export-preview" readonly spellcheck="false"></textarea>
+
+        <div class="export-footer">
+          <button class="btn-primary" id="export-copy">Copy to clipboard</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>
