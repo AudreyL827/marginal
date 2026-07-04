@@ -6,6 +6,7 @@ let searchQuery = '';
 let dateFilter = 'all';
 let albumFilter = null;
 let exportCiteFmt = 'apa';
+let selectedQuoteIds = new Set();
 
 // ── Theme ─────────────────────────────────────────
 const MOON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
@@ -42,7 +43,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 chrome.storage.onChanged.addListener((changes) => {
-  if (changes.quotes) { quotes = changes.quotes.newValue || []; renderAll(); }
+  if (changes.quotes) {
+    quotes = changes.quotes.newValue || [];
+    renderAll();
+    if (!document.getElementById('export-view').hidden) renderExportQuotes();
+  }
   if (changes.albums) { albums = changes.albums.newValue || []; renderFilters(); renderAll(); }
 });
 
@@ -221,12 +226,15 @@ function bindEvents() {
       document.querySelectorAll('.export-cite-tabs .tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       exportCiteFmt = tab.dataset.fmt;
-      updateExportPreview();
+      renderExportQuotes();
     });
   });
 
-  document.querySelectorAll('[name="export-format"]').forEach(r => {
-    r.addEventListener('change', updateExportPreview);
+  document.getElementById('export-select-all').addEventListener('change', e => {
+    if (e.target.checked) quotes.forEach(q => selectedQuoteIds.add(q.id));
+    else selectedQuoteIds.clear();
+    document.querySelectorAll('.export-item__check').forEach(cb => { cb.checked = e.target.checked; });
+    updateExportCopyBtn();
   });
 }
 
@@ -390,36 +398,106 @@ function switchTab(name) {
   document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('active', t.dataset.view === name));
   document.getElementById('quotes-view').hidden = name !== 'quotes';
   document.getElementById('export-view').hidden  = name !== 'export';
-  if (name === 'export') updateExportPreview();
+  if (name === 'export') renderExportQuotes();
 }
 
 // ── Export ────────────────────────────────────────
 
-function updateExportPreview() {
-  const fmt = document.querySelector('[name="export-format"]:checked')?.value || 'text';
-  document.getElementById('export-preview').value = buildExport(applyFilters(), fmt, exportCiteFmt);
+async function renderExportQuotes() {
+  const list = document.getElementById('export-quote-list');
+  if (!list) return;
+
+  // Read fresh from storage — same source as the Quotes tab
+  const stored = await chrome.storage.local.get('quotes');
+  const allQuotes = stored.quotes || [];
+  quotes = allQuotes; // keep global in sync
+
+  // Pre-select everything on each open
+  selectedQuoteIds = new Set(allQuotes.map(q => q.id));
+
+  if (allQuotes.length === 0) {
+    list.innerHTML = '<p class="export-empty">No quotes saved yet.</p>';
+    updateExportSelectAll();
+    updateExportCopyBtn();
+    return;
+  }
+
+  list.innerHTML = allQuotes.map(q => {
+    const cite = formatCitation(q, exportCiteFmt);
+    const preview = q.text.length > 120 ? q.text.slice(0, 120) + '…' : q.text;
+    return `<label class="export-item">
+      <input type="checkbox" class="export-item__check" data-id="${esc(q.id)}" checked>
+      <div class="export-item__body">
+        <p class="export-item__quote">${esc(preview)}</p>
+        <p class="export-item__cite">${esc(cite)}</p>
+        <p class="export-item__source">${esc(q.domain)} · ${fmtDate(q.savedAt)}</p>
+      </div>
+    </label>`;
+  }).join('');
+
+  list.querySelectorAll('.export-item__check').forEach(cb => {
+    cb.addEventListener('change', e => {
+      const id = e.target.dataset.id;
+      if (e.target.checked) selectedQuoteIds.add(id);
+      else selectedQuoteIds.delete(id);
+      updateExportSelectAll();
+      updateExportCopyBtn();
+    });
+  });
+
+  updateExportSelectAll();
+  updateExportCopyBtn();
 }
 
-function buildExport(qs, fmt, citeFmt) {
-  if (fmt === 'json') return JSON.stringify(qs, null, 2);
-  const sep = '\n\n---\n\n';
-  return qs.map(q => {
-    const cite = formatCitation(q, citeFmt);
-    const date = fmtDate(q.savedAt);
-    if (fmt === 'md') {
-      return [`> "${q.text}"`, `>`, `> — ${cite}`, q.note ? `\n*Note: ${q.note}*` : ''].filter(Boolean).join('\n');
-    }
-    return [`"${q.text}"`, `Source: ${cite}`, `Saved: ${date}`, q.note ? `Note: ${q.note}` : ''].filter(Boolean).join('\n');
-  }).join(sep);
+function updateExportSelectAll() {
+  const cb = document.getElementById('export-select-all');
+  if (!cb) return;
+  const n = quotes.length;
+  const sel = selectedQuoteIds.size;
+  cb.checked = sel === n && n > 0;
+  cb.indeterminate = sel > 0 && sel < n;
+}
+
+function updateExportCopyBtn() {
+  const btn = document.getElementById('export-copy');
+  if (!btn) return;
+  const n = selectedQuoteIds.size;
+  btn.textContent = n === 0 ? 'Copy citations' : `Copy ${n} citation${n === 1 ? '' : 's'}`;
+  btn.disabled = n === 0;
 }
 
 async function copyExport() {
-  const text = document.getElementById('export-preview').value;
-  await navigator.clipboard.writeText(text);
+  const selected = quotes.filter(q => selectedQuoteIds.has(q.id));
+  if (selected.length === 0) return;
+
+  const plain = selected.map(q => formatCitation(q, exportCiteFmt)).join('\n\n');
+  const html = buildCitationsHTML(selected);
+
+  try {
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([plain], { type: 'text/plain' }),
+      })
+    ]);
+  } catch {
+    await navigator.clipboard.writeText(plain);
+  }
+
   const btn = document.getElementById('export-copy');
   const orig = btn.textContent;
   btn.textContent = 'Copied!';
   setTimeout(() => { btn.textContent = orig; }, 1500);
+}
+
+function buildCitationsHTML(qs) {
+  const p = "margin:0;padding-left:36pt;text-indent:-36pt;font-family:'Times New Roman',Times,serif;font-size:12pt;line-height:2;";
+  const rows = qs.map(q => {
+    const cite = formatCitation(q, exportCiteFmt)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return `<p style="${p}">${cite}</p>`;
+  }).join('');
+  return `<div style="font-family:'Times New Roman',Times,serif;font-size:12pt;line-height:2;">${rows}</div>`;
 }
 
 // ── Citations ─────────────────────────────────────

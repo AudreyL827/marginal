@@ -3,7 +3,7 @@
   "name": "Marginal",
   "version": "1.0.0",
   "description": "Save research quotes with source citations",
-  "permissions": ["storage", "activeTab", "sidePanel", "tabs"],
+  "permissions": ["storage", "activeTab", "sidePanel", "tabs", "clipboardWrite"],
   "side_panel": {
     "default_path": "sidepanel.html"
   },
